@@ -6,6 +6,7 @@ const App = () => {
   const [selectedYear, setSelectedYear] = useState(null);
   const [raceWinners, setRaceWinners] = useState([]);
   const [champions, setChampions] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     fetchYears();
@@ -43,11 +44,15 @@ const App = () => {
 
   const fetchRaceWinners = async (year) => {
     try {
+      setIsLoading(true);
       const response = await fetch(`http://ergast.com/api/f1/${year}.json`);
       const data = await response.json();
-      setRaceWinners(data.MRData.RaceTable.Races || []);
+      const races = data?.MRData?.RaceTable?.Races || [];
+      setRaceWinners(races);
     } catch (error) {
       console.error(`Error fetching winners for ${year}:`, error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -76,14 +81,16 @@ const App = () => {
       {selectedYear && (
         <div className="race-winners">
           <h2>Race Winners {selectedYear}</h2>
-          {raceWinners.length > 0 ? (
+          {isLoading ? (
+            <p>Loading...</p>
+          ) : raceWinners.length > 0 ? (
             <ul>
               {raceWinners.map(race => (
                 <li
                   key={race.round}
-                  className={isWorldChampion(race.Results[0]?.Driver?.driverId) ? 'race-winner-champion' : 'race-winner'}
+                  className={isWorldChampion(race.Results?.[0]?.Driver?.driverId) ? 'race-winner-champion' : 'race-winner'}
                 >
-                  {race.raceName} - {race.Results[0]?.Driver?.givenName} {race.Results[0]?.Driver?.familyName}
+                  {race.raceName} - {race.Results?.[0]?.Driver?.givenName} {race.Results?.[0]?.Driver?.familyName}
                 </li>
               ))}
             </ul>
